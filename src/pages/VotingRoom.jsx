@@ -22,6 +22,7 @@ import {
   StackItem,
   Flex,
   FlexItem,
+  Gallery,
 } from '@patternfly/react-core';
 import { CheckCircleIcon, TimesCircleIcon } from '@patternfly/react-icons';
 import { ref, onValue, update, set } from 'firebase/database';
@@ -142,11 +143,13 @@ function VotingRoom() {
   const allVoted = Object.values(participants).every((p) => p.vote !== null);
   const votesRevealed = roomData.votesRevealed;
 
-  const voteStats = votesRevealed && Object.values(participants)
-    .map((p) => p.vote)
-    .filter((v) => v !== null);
+  const voteStats = votesRevealed
+    ? Object.values(participants)
+        .map((p) => p.vote)
+        .filter((v) => v !== null && v !== undefined)
+    : [];
 
-  const average = voteStats && voteStats.length > 0
+  const average = voteStats.length > 0
     ? (voteStats.reduce((a, b) => a + b, 0) / voteStats.length).toFixed(1)
     : null;
 
@@ -235,35 +238,33 @@ function VotingRoom() {
                           </Title>
                         </StackItem>
                         <StackItem>
-                          <Grid hasGutter>
+                          <Gallery hasGutter minWidths={{ default: '200px' }}>
                             {Object.values(participants).map((participant) => (
-                              <GridItem span={3} key={participant.name}>
-                                <Card isCompact>
-                                  <CardBody>
-                                    <Stack>
-                                      <StackItem>
-                                        <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                              <Card isCompact key={participant.name}>
+                                <CardBody>
+                                  <Stack>
+                                    <StackItem>
+                                      <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                                        <FlexItem>
+                                          <strong>{participant.name}</strong>
+                                        </FlexItem>
+                                        {participant.isModerator && (
                                           <FlexItem>
-                                            <strong>{participant.name}</strong>
+                                            <Label color="gold">Moderator</Label>
                                           </FlexItem>
-                                          {participant.isModerator && (
-                                            <FlexItem>
-                                              <Label color="gold">Moderator</Label>
-                                            </FlexItem>
-                                          )}
-                                        </Flex>
-                                      </StackItem>
-                                      <StackItem>
-                                        <Title headingLevel="h1" size="3xl">
-                                          {participant.vote !== null ? participant.vote : '—'}
-                                        </Title>
-                                      </StackItem>
-                                    </Stack>
-                                  </CardBody>
-                                </Card>
-                              </GridItem>
+                                        )}
+                                      </Flex>
+                                    </StackItem>
+                                    <StackItem>
+                                      <Title headingLevel="h1" size="3xl">
+                                        {participant.vote !== null ? participant.vote : '—'}
+                                      </Title>
+                                    </StackItem>
+                                  </Stack>
+                                </CardBody>
+                              </Card>
                             ))}
-                          </Grid>
+                          </Gallery>
                         </StackItem>
                         {average && (
                           <StackItem>
