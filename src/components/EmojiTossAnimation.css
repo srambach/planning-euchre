@@ -1,0 +1,98 @@
+.emoji-toss-animation-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.flying-emoji {
+  position: absolute;
+  left: -150px;
+  animation: flyAcross 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  pointer-events: none;
+}
+
+.flying-emoji-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.flying-emoji-icon {
+  font-size: 4rem;
+  animation: spin 2s ease-in-out;
+}
+
+.flying-emoji-labels {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: var(--pf-v6-global--BackgroundColor--100);
+  border: 2px solid var(--pf-v6-global--primary-color--100);
+  border-radius: 1rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.flying-emoji-from {
+  color: var(--pf-v6-global--primary-color--100);
+}
+
+.flying-emoji-arrow {
+  color: var(--pf-v6-global--Color--200);
+}
+
+.flying-emoji-to {
+  color: var(--pf-v6-global--success-color--100);
+}
+
+@keyframes flyAcross {
+  0% {
+    left: -150px;
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-60px) scale(1.1);
+  }
+  50% {
+    transform: translateY(-80px) scale(1.2);
+  }
+  75% {
+    transform: translateY(-60px) scale(1.1);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    left: calc(100% + 150px);
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-15deg);
+  }
+  75% {
+    transform: rotate(15deg);
+  }
+}

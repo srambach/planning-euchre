@@ -17,6 +17,7 @@ import {
 import { ref, set } from 'firebase/database';
 import { database } from '../services/firebase';
 import { generateRoomCode } from '../utils/generateRoomCode';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 function Home() {
   const [userName, setUserName] = useState('');
@@ -43,6 +44,12 @@ function Home() {
           name: userName.trim(),
           vote: null,
           isModerator: true,
+          emoji: '✅',
+          badges: [],
+          voteHistory: {
+            votes: [],
+            totalVotes: 0,
+          },
         },
       },
     });
@@ -62,10 +69,17 @@ function Home() {
   return (
     <Page>
       <PageSection variant="light">
-        <Title headingLevel="h1" size="3xl">
-          Planning Poker
-        </Title>
-        <p>Estimate story points with your agile team</p>
+        <Split hasGutter>
+          <SplitItem isFilled>
+            <Title headingLevel="h1" size="3xl">
+              Planning Poker
+            </Title>
+            <p>Estimate story points with your agile team</p>
+          </SplitItem>
+          <SplitItem>
+            <ThemeSwitcher />
+          </SplitItem>
+        </Split>
       </PageSection>
       <PageSection>
         <Split hasGutter>

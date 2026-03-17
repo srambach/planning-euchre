@@ -1,0 +1,43 @@
+.emoji-toss-feed-container {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-toss-item {
+  transition: opacity 1.5s ease-out;
+  margin-bottom: 0.5rem;
+}
+
+.emoji-toss-item.visible {
+  opacity: 1;
+  animation: slideIn 1s ease-out;
+}
+
+.emoji-toss-item.fading-out {
+  opacity: 0;
+}
+
+.emoji-toss-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emoji-toss-emoji {
+  font-size: 1.5rem;
+}
+
+.emoji-toss-text {
+  font-size: 0.875rem;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
