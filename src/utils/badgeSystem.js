@@ -74,7 +74,9 @@ export const checkSpeedDemon = (voteTime, issueUpdateTime) => {
  * @returns {Object} - { optimist: boolean, minimalist: boolean }
  */
 export const checkConsistency = (participant, allParticipants) => {
-  const voteHistory = participant.voteHistory?.votes || [];
+  const votes = participant.voteHistory?.votes || [];
+  // Firebase stores arrays as objects, so convert to array if needed
+  const voteHistory = Array.isArray(votes) ? votes : Object.values(votes);
 
   // Need at least 3 votes to determine consistency
   if (voteHistory.length < 3) {
@@ -109,7 +111,9 @@ export const checkConsistency = (participant, allParticipants) => {
  * @returns {boolean}
  */
 export const checkConsensusBuilder = (participant) => {
-  const voteHistory = participant.voteHistory?.votes || [];
+  const votes = participant.voteHistory?.votes || [];
+  // Firebase stores arrays as objects, so convert to array if needed
+  const voteHistory = Array.isArray(votes) ? votes : Object.values(votes);
 
   // Count how many times the participant's vote matched the average
   let matchCount = 0;
@@ -193,8 +197,13 @@ export const updateVoteHistory = (participant, vote, roundAverage = null) => {
     voteEntry.roundAverage = roundAverage;
   }
 
+  // Firebase stores arrays as objects, so we need to convert back to array
+  const votesArray = Array.isArray(voteHistory.votes)
+    ? voteHistory.votes
+    : Object.values(voteHistory.votes || {});
+
   return {
-    votes: [...voteHistory.votes, voteEntry],
+    votes: [...votesArray, voteEntry],
     totalVotes: voteHistory.totalVotes + 1,
     lastVoteTime: Date.now(),
   };
