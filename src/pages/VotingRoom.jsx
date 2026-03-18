@@ -278,6 +278,15 @@ function VotingRoom() {
                           Cast Your Vote
                         </Title>
                       </StackItem>
+                      {votesRevealed && (
+                        <StackItem>
+                          <Alert
+                            variant="info"
+                            title="Voting is locked until votes are cleared"
+                            isInline
+                          />
+                        </StackItem>
+                      )}
                       <StackItem>
                         <Grid hasGutter>
                           {FIBONACCI_VALUES.map((value) => (
@@ -286,6 +295,7 @@ function VotingRoom() {
                                 variant={myVote === value ? 'primary' : 'secondary'}
                                 isBlock
                                 onClick={() => castVote(value)}
+                                isDisabled={votesRevealed}
                               >
                                 <Title headingLevel="h2" size="2xl">{value}</Title>
                               </Button>
