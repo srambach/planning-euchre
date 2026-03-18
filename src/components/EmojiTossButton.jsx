@@ -8,6 +8,11 @@ import {
   Alert,
   Stack,
   StackItem,
+  Form,
+  FormGroup,
+  TextInput,
+  Flex,
+  FlexItem,
 } from '@patternfly/react-core';
 import { sendEmojiToss } from '../utils/emojiTossHelpers';
 
@@ -17,6 +22,7 @@ function EmojiTossButton({ fromUser, toUser, roomCode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [lastTossTime, setLastTossTime] = useState(0);
   const [rateLimitMessage, setRateLimitMessage] = useState('');
+  const [customEmoji, setCustomEmoji] = useState('');
 
   const handleEmojiToss = async (emoji) => {
     const now = Date.now();
@@ -59,6 +65,38 @@ function EmojiTossButton({ fromUser, toUser, roomCode }) {
               />
             </StackItem>
           )}
+          <StackItem>
+            <Form>
+              <FormGroup label="Custom emoji">
+                <Flex>
+                  <FlexItem grow={{ default: 'grow' }}>
+                    <TextInput
+                      id="custom-toss-emoji"
+                      value={customEmoji}
+                      onChange={(_e, value) => setCustomEmoji(value)}
+                      placeholder="Paste any emoji"
+                    />
+                  </FlexItem>
+                  <FlexItem>
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        if (customEmoji.trim()) {
+                          handleEmojiToss(customEmoji.trim());
+                          setCustomEmoji('');
+                        }
+                      }}
+                    >
+                      Toss
+                    </Button>
+                  </FlexItem>
+                </Flex>
+              </FormGroup>
+            </Form>
+          </StackItem>
+          <StackItem>
+            <strong>Quick picks:</strong>
+          </StackItem>
           <StackItem>
             <Grid hasGutter>
               {EMOJI_OPTIONS.map((emoji) => (
