@@ -115,6 +115,11 @@ function VotingRoom() {
   }, [roomCode, userName, navigate]);
 
   const castVote = async (value) => {
+    // Prevent voting if votes are already revealed
+    if (roomData?.votesRevealed) {
+      return;
+    }
+
     const voteTime = Date.now();
     const participant = roomData?.participants?.[userName] || {};
     const allParticipants = roomData?.participants || {};
