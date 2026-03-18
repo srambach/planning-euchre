@@ -89,9 +89,9 @@ function VotingRoom() {
         update(ref(database), updates);
       }
 
-      // Update my vote and emoji from database
-      if (data.participants?.[userName]?.vote !== undefined) {
-        setMyVote(data.participants[userName].vote);
+      // Update my vote from database (sync with Firebase, including null)
+      if (data.participants?.[userName]) {
+        setMyVote(data.participants[userName].vote ?? null);
       }
       if (data.participants?.[userName]?.emoji) {
         setMyEmoji(data.participants[userName].emoji);
