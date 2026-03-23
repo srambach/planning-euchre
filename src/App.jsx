@@ -5,7 +5,7 @@ import VotingRoom from './pages/VotingRoom';
 
 function App() {
   return (
-    <Router basename="/***REMOVED***">
+    <Router basename="/planning-euchre">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/room/:roomCode" element={<VotingRoom />} />
