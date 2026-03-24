@@ -15,7 +15,7 @@ import {
   Divider,
 } from '@patternfly/react-core';
 import { ref, set } from 'firebase/database';
-import { database } from '../services/firebase';
+import { database, ensureAuth } from '../services/firebase';
 import { generateRoomCode } from '../utils/generateRoomCode';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
@@ -31,10 +31,14 @@ function Home() {
       return;
     }
 
-    const roomCode = generateRoomCode();
-    const roomRef = ref(database, `rooms/${roomCode}`);
+    try {
+      // Ensure user is authenticated before creating room
+      await ensureAuth();
 
-    await set(roomRef, {
+      const roomCode = generateRoomCode();
+      const roomRef = ref(database, `rooms/${roomCode}`);
+
+      await set(roomRef, {
       sessionName: sessionName.trim(),
       createdAt: Date.now(),
       currentIssue: '',
@@ -54,7 +58,11 @@ function Home() {
       },
     });
 
-    navigate(`/room/${roomCode}?user=${encodeURIComponent(userName.trim())}`);
+      navigate(`/room/${roomCode}?user=${encodeURIComponent(userName.trim())}`);
+    } catch (error) {
+      console.error('Error creating session:', error);
+      alert('Failed to create session. Check console for details.');
+    }
   };
 
   const joinSession = () => {

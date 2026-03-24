@@ -26,7 +26,7 @@ import {
   Popover,
 } from '@patternfly/react-core';
 import { ref, onValue, update, set } from 'firebase/database';
-import { database } from '../services/firebase';
+import { database, ensureAuth } from '../services/firebase';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import EmojiTossButton from '../components/EmojiTossButton';
 import EmojiTossFeed from '../components/EmojiTossFeed';
@@ -59,46 +59,54 @@ function VotingRoom() {
       return;
     }
 
-    const roomRef = ref(database, `rooms/${roomCode}`);
+    let unsubscribe;
 
-    const unsubscribe = onValue(roomRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        setError('Room not found');
-        return;
-      }
+    // Ensure authentication before setting up room listener
+    ensureAuth().then(() => {
+      const roomRef = ref(database, `rooms/${roomCode}`);
 
-      setRoomData(data);
-      setCurrentIssue(data.currentIssue || '');
-      setEmojiTosses(data.emojiTosses || null);
+      unsubscribe = onValue(roomRef, async (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          setError('Room not found');
+          return;
+        }
 
-      // Add user to participants if not already there
-      if (!data.participants?.[userName]) {
-        const updates = {};
-        updates[`rooms/${roomCode}/participants/${userName}`] = {
-          name: userName,
-          vote: null,
-          isModerator: false,
-          emoji: '✅',
-          badges: [],
-          voteHistory: {
-            votes: [],
-            totalVotes: 0,
-          },
-        };
-        update(ref(database), updates);
-      }
+        setRoomData(data);
+        setCurrentIssue(data.currentIssue || '');
+        setEmojiTosses(data.emojiTosses || null);
+
+        // Add user to participants if not already there
+        if (!data.participants?.[userName]) {
+          const updates = {};
+          updates[`rooms/${roomCode}/participants/${userName}`] = {
+            name: userName,
+            vote: null,
+            isModerator: false,
+            emoji: '✅',
+            badges: [],
+            voteHistory: {
+              votes: [],
+              totalVotes: 0,
+            },
+          };
+          await update(ref(database), updates);
+        }
 
       // Update my vote from database (sync with Firebase, including null)
       if (data.participants?.[userName]) {
         setMyVote(data.participants[userName].vote ?? null);
       }
-      if (data.participants?.[userName]?.emoji) {
-        setMyEmoji(data.participants[userName].emoji);
-      }
-    }, (error) => {
-      console.error('Firebase error:', error);
-      setError('Failed to connect to session');
+        if (data.participants?.[userName]?.emoji) {
+          setMyEmoji(data.participants[userName].emoji);
+        }
+      }, (error) => {
+        console.error('Firebase error:', error);
+        setError('Failed to connect to session');
+      });
+    }).catch((error) => {
+      console.error('Authentication error:', error);
+      setError('Failed to authenticate');
     });
 
     // Cleanup expired tosses every second
@@ -109,10 +117,12 @@ function VotingRoom() {
     }, 1000);
 
     return () => {
-      unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
       clearInterval(cleanupInterval);
     };
-  }, [roomCode, userName, navigate]);
+  }, [roomCode, userName, navigate, emojiTosses]);
 
   const castVote = async (value) => {
     // Prevent voting if votes are already revealed

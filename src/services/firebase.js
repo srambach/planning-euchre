@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 // Firebase configuration - users will need to add their own config
 const firebaseConfig = {
@@ -20,11 +20,20 @@ const app = initializeApp(firebaseConfig);
 export const database = getDatabase(app);
 export const auth = getAuth(app);
 
-// Automatically sign in anonymously when the app loads
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    signInAnonymously(auth).catch((error) => {
-      console.error('Anonymous auth failed:', error);
-    });
+// Promise that resolves when user is authenticated
+let authReady = null;
+
+// Ensure user is authenticated before any database operations
+export const ensureAuth = async () => {
+  if (!authReady) {
+    authReady = signInAnonymously(auth)
+      .then(() => {
+        console.log('Anonymous authentication successful');
+      })
+      .catch((error) => {
+        console.error('Anonymous auth failed:', error);
+        throw error;
+      });
   }
-});
+  return authReady;
+};
