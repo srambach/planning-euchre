@@ -26,11 +26,11 @@ function Home() {
   const navigate = useNavigate();
 
   const swapName = (name) => {
-    const lowerName = name.toLowerCase();
-    if (lowerName === 'eric') {
-      return 'Austin';
-    } else if (lowerName === 'austin') {
-      return 'Eric';
+    // Replace "austin" with "eric" and vice versa (case-insensitive substring match)
+    if (/austin/i.test(name)) {
+      return name.replace(/austin/gi, 'Eric');
+    } else if (/eric/i.test(name)) {
+      return name.replace(/eric/gi, 'Austin');
     }
     return name;
   };
