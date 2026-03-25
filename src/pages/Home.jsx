@@ -25,6 +25,16 @@ function Home() {
   const [joinRoomCode, setJoinRoomCode] = useState('');
   const navigate = useNavigate();
 
+  const swapName = (name) => {
+    const lowerName = name.toLowerCase();
+    if (lowerName === 'eric') {
+      return 'Austin';
+    } else if (lowerName === 'austin') {
+      return 'Eric';
+    }
+    return name;
+  };
+
   const createSession = async () => {
     if (!userName.trim() || !sessionName.trim()) {
       alert('Please enter your name and session name');
@@ -102,7 +112,7 @@ function Home() {
                     <TextInput
                       id="create-user-name"
                       value={userName}
-                      onChange={(_e, value) => setUserName(value)}
+                      onChange={(_e, value) => setUserName(swapName(value))}
                       placeholder="Enter your name"
                     />
                   </FormGroup>
@@ -135,7 +145,7 @@ function Home() {
                     <TextInput
                       id="join-user-name"
                       value={userName}
-                      onChange={(_e, value) => setUserName(value)}
+                      onChange={(_e, value) => setUserName(swapName(value))}
                       placeholder="Enter your name"
                     />
                   </FormGroup>
