@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Page,
@@ -12,6 +12,8 @@ import {
   Form,
   FormGroup,
   TextInput,
+  FormSelect,
+  FormSelectOption,
   List,
   ListItem,
   Label,
@@ -24,6 +26,11 @@ import {
   FlexItem,
   Gallery,
   Popover,
+  Modal,
+  ModalVariant,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from '@patternfly/react-core';
 import { ref, onValue, update, set } from 'firebase/database';
 import { database, ensureAuth } from '../services/firebase';
@@ -52,6 +59,31 @@ function VotingRoom() {
   const [customEmoji, setCustomEmoji] = useState('');
   const [emojiTosses, setEmojiTosses] = useState(null);
   const [issueUpdateTime, setIssueUpdateTime] = useState(Date.now());
+  const [newUserName, setNewUserName] = useState('');
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [selectedNewModerator, setSelectedNewModerator] = useState('');
+
+  // Memoized values for moderator logic
+  const isModerator = useMemo(
+    () => roomData?.participants?.[userName]?.isModerator || false,
+    [roomData, userName]
+  );
+
+  const otherParticipants = useMemo(
+    () => Object.keys(roomData?.participants || {}).filter(name => name !== userName),
+    [roomData, userName]
+  );
+
+  const needsModeratorSelection = useMemo(
+    () => isModerator && otherParticipants.length > 0,
+    [isModerator, otherParticipants]
+  );
+
+  // Modal close handler
+  const handleCloseLeaveModal = useCallback(() => {
+    setIsLeaveModalOpen(false);
+    setSelectedNewModerator('');
+  }, []);
 
   useEffect(() => {
     if (!userName) {
@@ -188,6 +220,76 @@ function VotingRoom() {
     setMyEmoji(emoji);
   };
 
+  const swapName = (name) => {
+    // Replace "austin" with "eric" and vice versa (case-insensitive substring match)
+    if (/austin/i.test(name)) {
+      return name.replace(/austin/gi, 'Eric');
+    } else if (/eric/i.test(name)) {
+      return name.replace(/eric/gi, 'Austin');
+    }
+    return name;
+  };
+
+  const changeName = async () => {
+    const trimmedName = newUserName.trim();
+    if (!trimmedName || trimmedName === userName) {
+      setNewUserName('');
+      return;
+    }
+
+    // Check if name already exists
+    if (roomData?.participants?.[trimmedName]) {
+      alert('This name is already in use');
+      return;
+    }
+
+    try {
+      const currentParticipant = roomData?.participants?.[userName];
+      if (!currentParticipant) return;
+
+      const updates = {};
+      // Add new participant with current data
+      updates[`rooms/${roomCode}/participants/${trimmedName}`] = {
+        ...currentParticipant,
+        name: trimmedName,
+      };
+      // Remove old participant
+      updates[`rooms/${roomCode}/participants/${userName}`] = null;
+
+      await update(ref(database), updates);
+
+      // Update URL with new name
+      navigate(`/room/${roomCode}?user=${encodeURIComponent(trimmedName)}`, { replace: true });
+      setNewUserName('');
+    } catch (error) {
+      console.error('Error changing name:', error);
+      alert('Failed to change name');
+    }
+  };
+
+  const handleLeaveRoom = async () => {
+    try {
+      const updates = {};
+
+      // Transfer moderator status if needed (validated by UI, not here)
+      if (isModerator && selectedNewModerator) {
+        updates[`rooms/${roomCode}/participants/${selectedNewModerator}/isModerator`] = true;
+      }
+
+      // Remove current user from participants
+      updates[`rooms/${roomCode}/participants/${userName}`] = null;
+
+      await update(ref(database), updates);
+
+      // Close modal and navigate
+      handleCloseLeaveModal();
+      navigate('/');
+    } catch (error) {
+      console.error('Error leaving room:', error);
+      alert('Failed to leave room');
+    }
+  };
+
   if (error) {
     return (
       <Page>
@@ -216,7 +318,6 @@ function VotingRoom() {
   }
 
   const participants = roomData.participants || {};
-  const isModerator = participants[userName]?.isModerator;
   const allVoted = Object.values(participants).every((p) => p.vote !== null);
   const votesRevealed = roomData.votesRevealed;
 
@@ -245,7 +346,44 @@ function VotingRoom() {
           <SplitItem>
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
               <FlexItem>
-                <Label color="blue">Logged in as: {userName}</Label>
+                <Popover
+                  headerContent="Change your name"
+                  bodyContent={
+                    <Form>
+                      <FormGroup label="New name">
+                        <Flex>
+                          <FlexItem grow={{ default: 'grow' }}>
+                            <TextInput
+                              id="new-user-name"
+                              value={newUserName}
+                              onChange={(_e, value) => setNewUserName(swapName(value))}
+                              placeholder="Enter new name"
+                            />
+                          </FlexItem>
+                          <FlexItem>
+                            <Button
+                              variant="primary"
+                              onClick={changeName}
+                            >
+                              Change
+                            </Button>
+                          </FlexItem>
+                        </Flex>
+                      </FormGroup>
+                    </Form>
+                  }
+                >
+                  <Button variant="link" style={{ padding: 0 }}>
+                    <Label color="blue" style={{ cursor: 'pointer' }}>
+                      Logged in as: {userName}
+                    </Label>
+                  </Button>
+                </Popover>
+              </FlexItem>
+              <FlexItem>
+                <Button variant="danger" onClick={() => setIsLeaveModalOpen(true)}>
+                  Leave Room
+                </Button>
               </FlexItem>
               <FlexItem>
                 <ThemeSwitcher />
@@ -546,6 +684,61 @@ function VotingRoom() {
         </Grid>
       </PageSection>
     </Page>
+    {isLeaveModalOpen && (
+      <Modal
+        variant={ModalVariant.small}
+        isOpen={isLeaveModalOpen}
+        onClose={handleCloseLeaveModal}
+      >
+        <ModalHeader title="Leave Room" />
+        <ModalBody>
+          <Stack hasGutter>
+            <StackItem>
+              Are you sure you want to leave this room? You will be removed from the session.
+            </StackItem>
+            {needsModeratorSelection && (
+              <StackItem>
+                <Form>
+                  <FormGroup label="Select New Moderator" isRequired>
+                    <FormSelect
+                      value={selectedNewModerator}
+                      onChange={(_event, value) => setSelectedNewModerator(value)}
+                      aria-label="Select new moderator"
+                    >
+                      <FormSelectOption value="" label="Choose a participant..." isDisabled />
+                      {otherParticipants.map((participantName) => (
+                        <FormSelectOption
+                          key={participantName}
+                          value={participantName}
+                          label={participantName}
+                        />
+                      ))}
+                    </FormSelect>
+                  </FormGroup>
+                </Form>
+              </StackItem>
+            )}
+          </Stack>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            key="leave"
+            variant="danger"
+            onClick={handleLeaveRoom}
+            isDisabled={needsModeratorSelection && !selectedNewModerator}
+          >
+            Leave
+          </Button>
+          <Button
+            key="cancel"
+            variant="link"
+            onClick={handleCloseLeaveModal}
+          >
+            Cancel
+          </Button>
+        </ModalFooter>
+      </Modal>
+    )}
     </>
   );
 }
