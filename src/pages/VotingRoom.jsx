@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Page,
@@ -32,7 +32,7 @@ import {
   ModalBody,
   ModalFooter,
 } from '@patternfly/react-core';
-import { ref, onValue, update, set } from 'firebase/database';
+import { ref, onValue, update, set, remove } from 'firebase/database';
 import { database, ensureAuth } from '../services/firebase';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import EmojiTossButton from '../components/EmojiTossButton';
@@ -62,6 +62,7 @@ function VotingRoom() {
   const [newUserName, setNewUserName] = useState('');
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [selectedNewModerator, setSelectedNewModerator] = useState('');
+  const isLeavingRef = useRef(false);
 
   // Memoized values for moderator logic
   const isModerator = useMemo(
@@ -108,8 +109,8 @@ function VotingRoom() {
         setCurrentIssue(data.currentIssue || '');
         setEmojiTosses(data.emojiTosses || null);
 
-        // Add user to participants if not already there
-        if (!data.participants?.[userName]) {
+        // Add user to participants if not already there (but not if they're leaving)
+        if (!data.participants?.[userName] && !isLeavingRef.current) {
           const updates = {};
           updates[`rooms/${roomCode}/participants/${userName}`] = {
             name: userName,
@@ -269,24 +270,45 @@ function VotingRoom() {
 
   const handleLeaveRoom = async () => {
     try {
-      const updates = {};
+      console.log('Leaving room:', roomCode, 'User:', userName);
 
-      // Transfer moderator status if needed (validated by UI, not here)
-      if (isModerator && selectedNewModerator) {
-        updates[`rooms/${roomCode}/participants/${selectedNewModerator}/isModerator`] = true;
+      // Set ref to prevent re-adding during leave process
+      isLeavingRef.current = true;
+
+      // Check if this is the last participant
+      const isLastParticipant = otherParticipants.length === 0;
+      console.log('Is last participant?', isLastParticipant);
+
+      if (isLastParticipant) {
+        // Delete the entire room when the last person leaves
+        console.log('Deleting entire room');
+        const roomRef = ref(database, `rooms/${roomCode}`);
+        await remove(roomRef);
+        console.log('Room deleted successfully');
+      } else {
+        const updates = {};
+
+        // Transfer moderator status if needed (validated by UI, not here)
+        if (isModerator && selectedNewModerator) {
+          console.log('Transferring moderator to:', selectedNewModerator);
+          updates[`rooms/${roomCode}/participants/${selectedNewModerator}/isModerator`] = true;
+        }
+
+        // Remove current user from participants using null value
+        console.log('Removing participant:', userName);
+        updates[`rooms/${roomCode}/participants/${userName}`] = null;
+
+        // Execute all updates in a single atomic operation
+        await update(ref(database), updates);
+        console.log('Participant removed successfully');
       }
-
-      // Remove current user from participants
-      updates[`rooms/${roomCode}/participants/${userName}`] = null;
-
-      await update(ref(database), updates);
 
       // Close modal and navigate
       handleCloseLeaveModal();
       navigate('/');
     } catch (error) {
       console.error('Error leaving room:', error);
-      alert('Failed to leave room');
+      alert('Failed to leave room: ' + error.message);
     }
   };
 
