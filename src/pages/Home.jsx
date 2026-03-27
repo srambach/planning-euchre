@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Page,
   PageSection,
@@ -24,6 +24,15 @@ function Home() {
   const [sessionName, setSessionName] = useState('');
   const [joinRoomCode, setJoinRoomCode] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Prefill room code from URL if provided
+  useEffect(() => {
+    const roomCodeParam = searchParams.get('roomCode');
+    if (roomCodeParam) {
+      setJoinRoomCode(roomCodeParam.toUpperCase());
+    }
+  }, [searchParams]);
 
   const swapName = (name) => {
     // Replace "austin" with "eric" and vice versa (case-insensitive substring match)

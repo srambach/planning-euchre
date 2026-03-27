@@ -31,6 +31,7 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  ClipboardCopy,
 } from '@patternfly/react-core';
 import { ref, onValue, update, set, remove } from 'firebase/database';
 import { database, ensureAuth } from '../services/firebase';
@@ -64,6 +65,12 @@ function VotingRoom() {
   const [selectedNewModerator, setSelectedNewModerator] = useState('');
   const isLeavingRef = useRef(false);
 
+  // Generate shareable room URL
+  const shareUrl = useMemo(() => {
+    const origin = window.location.origin;
+    return `${origin}/planning-euchre/room/${roomCode}`;
+  }, [roomCode]);
+
   // Memoized values for moderator logic
   const isModerator = useMemo(
     () => roomData?.participants?.[userName]?.isModerator || false,
@@ -88,7 +95,7 @@ function VotingRoom() {
 
   useEffect(() => {
     if (!userName) {
-      navigate('/');
+      navigate(`/?roomCode=${roomCode}`);
       return;
     }
 
@@ -364,6 +371,14 @@ function VotingRoom() {
               {roomData.sessionName}
             </Title>
             <p>Room Code: <strong>{roomCode}</strong></p>
+            <ClipboardCopy
+              hoverTip="Copy link"
+              clickTip="Copied!"
+              variant="inline-compact"
+              isReadOnly
+            >
+              {shareUrl}
+            </ClipboardCopy>
           </SplitItem>
           <SplitItem>
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
