@@ -7,6 +7,7 @@ import {
   PageSection,
   Title,
   Card,
+  CardTitle,
   CardBody,
   Button,
   Grid,
@@ -465,10 +466,13 @@ function VotingRoom() {
             <Stack hasGutter>
               <StackItem>
                 <Card>
-                  <CardBody>
+                  <CardTitle>
                     <Title headingLevel="h2" size="xl">
                       Current Issue
                     </Title>
+                  </CardTitle>
+                  <CardBody>
+
                     <Form>
                       <FormGroup>
                         <TextInput
