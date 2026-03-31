@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import logo from '../assets/allycat-emoji-256.png';
+import { CopyIcon } from '@patternfly/react-icons';
 import {
   Page,
   PageSection,
@@ -18,8 +20,6 @@ import {
   ListItem,
   Label,
   Alert,
-  Split,
-  SplitItem,
   Stack,
   StackItem,
   Flex,
@@ -31,10 +31,14 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  ClipboardCopy,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
+  Masthead,
+  MastheadMain,
+  MastheadBrand,
+  MastheadLogo,
+  MastheadContent,
 } from '@patternfly/react-core';
 import { ref, onValue, update, set, remove } from 'firebase/database';
 import { database, ensureAuth } from '../services/firebase';
@@ -62,7 +66,7 @@ function VotingRoom() {
   const [myEmoji, setMyEmoji] = useState('✅');
   const [customEmoji, setCustomEmoji] = useState('');
   const [emojiTosses, setEmojiTosses] = useState(null);
-  const [issueUpdateTime, setIssueUpdateTime] = useState(Date.now());
+  const [issueUpdateTime, setIssueUpdateTime] = useState(() => Date.now());
   const [newUserName, setNewUserName] = useState('');
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [selectedNewModerator, setSelectedNewModerator] = useState('');
@@ -173,6 +177,7 @@ function VotingRoom() {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/purity
     const voteTime = Date.now();
     const participant = roomData?.participants?.[userName] || {};
     const allParticipants = roomData?.participants || {};
@@ -366,74 +371,95 @@ function VotingRoom() {
   return (
     <>
       <EmojiTossAnimation tosses={emojiTosses} />
-      <Page sidebar={null}>
-        <PageSection variant="light">
-        <Split hasGutter>
-          <SplitItem isFilled>
-            <Title headingLevel="h1" size="2xl">
-              {roomData.sessionName}
-            </Title>
-            <p>Room Code: <strong>{roomCode}</strong></p>
-            <ClipboardCopy
-              hoverTip="Copy link"
-              clickTip="Copied!"
-              variant="inline-compact"
-              isReadOnly
-            >
-              {shareUrl}
-            </ClipboardCopy>
-          </SplitItem>
-          <SplitItem>
-            <Toolbar>
-              <ToolbarContent>
-                <ToolbarItem>
-                  <Popover
-                    headerContent="Change your name"
-                    bodyContent={
-                      <Form>
-                        <FormGroup label="New name">
-                          <Flex>
-                            <FlexItem grow={{ default: 'grow' }}>
-                              <TextInput
-                                id="new-user-name"
-                                value={newUserName}
-                                onChange={(_e, value) => setNewUserName(swapName(value))}
-                                placeholder="Enter new name"
-                              />
-                            </FlexItem>
-                            <FlexItem>
-                              <Button
-                                variant="primary"
-                                onClick={changeName}
-                              >
-                                Change
-                              </Button>
-                            </FlexItem>
-                          </Flex>
-                        </FormGroup>
-                      </Form>
-                    }
-                  >
-                    <Button variant="secondary">
-                      Logged in as: {userName}
+      <Page
+        sidebar={null}
+        masthead={
+          <Masthead>
+            <MastheadMain>
+              <MastheadBrand>
+                <MastheadLogo component="div">
+                  <img src={logo} alt="Planning Poker Logo" style={{ height: '48px', width: '48px' }} />
+                </MastheadLogo>
+              </MastheadBrand>
+            </MastheadMain>
+            <MastheadContent>
+              <Flex alignItems={{ default: 'alignItemsCenter' }} justifyContent={{ default: 'justifyContentSpaceBetween' }} style={{ width: '100%' }}>
+                <FlexItem>
+                  <Title headingLevel="h1" size="2xl">
+                    {roomData.sessionName}
+                  </Title>
+                </FlexItem>
+                <FlexItem>
+                  <Toolbar>
+                    <ToolbarContent>
+                      <ToolbarItem>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                          <FlexItem>
+                            <strong>Room Code: {roomCode}</strong>
+                          </FlexItem>
+                          <FlexItem>
+                            <Button
+                              variant="plain"
+                              onClick={() => {
+                                navigator.clipboard.writeText(shareUrl);
+                              }}
+                              aria-label="Copy share link"
+                            >
+                              <CopyIcon />
+                            </Button>
+                          </FlexItem>
+                        </Flex>
+                      </ToolbarItem>
+                      <ToolbarItem>
+                        <Popover
+                      headerContent="Change your name"
+                      bodyContent={
+                        <Form>
+                          <FormGroup label="New name">
+                            <Flex>
+                              <FlexItem grow={{ default: 'grow' }}>
+                                <TextInput
+                                  id="new-user-name"
+                                  value={newUserName}
+                                  onChange={(_e, value) => setNewUserName(swapName(value))}
+                                  placeholder="Enter new name"
+                                />
+                              </FlexItem>
+                              <FlexItem>
+                                <Button
+                                  variant="primary"
+                                  onClick={changeName}
+                                >
+                                  Change
+                                </Button>
+                              </FlexItem>
+                            </Flex>
+                          </FormGroup>
+                        </Form>
+                      }
+                    >
+                      <Button variant="secondary">
+                        Logged in as: {userName}
+                      </Button>
+                    </Popover>
+                  </ToolbarItem>
+                  <ToolbarItem>
+                    <Button variant="danger" onClick={() => setIsLeaveModalOpen(true)}>
+                      Leave Room
                     </Button>
-                  </Popover>
-                </ToolbarItem>
-                <ToolbarItem>
-                  <Button variant="danger" onClick={() => setIsLeaveModalOpen(true)}>
-                    Leave Room
-                  </Button>
-                </ToolbarItem>
-                <ToolbarItem>
-                  <ThemeSwitcher />
-                </ToolbarItem>
-              </ToolbarContent>
-            </Toolbar>
-          </SplitItem>
-        </Split>
-      </PageSection>
-
-      <PageSection>
+                  </ToolbarItem>
+                      <ToolbarItem>
+                        <ThemeSwitcher />
+                      </ToolbarItem>
+                    </ToolbarContent>
+                  </Toolbar>
+                </FlexItem>
+              </Flex>
+            </MastheadContent>
+          </Masthead>
+        }
+      >
+        <PageSection>
         <Grid hasGutter>
           <GridItem span={8}>
             <Stack hasGutter>

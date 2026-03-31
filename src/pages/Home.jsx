@@ -21,7 +21,7 @@ import ThemeSwitcher from '../components/ThemeSwitcher';
 
 function Home() {
   const [userName, setUserName] = useState('');
-  const [sessionName, setSessionName] = useState('');
+  const [sessionName, setSessionName] = useState('Happy Fun Planning Time');
   const [joinRoomCode, setJoinRoomCode] = useState('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -45,8 +45,8 @@ function Home() {
   };
 
   const createSession = async () => {
-    if (!userName.trim() || !sessionName.trim()) {
-      alert('Please enter your name and session name');
+    if (!userName.trim()) {
+      alert('Please enter your name');
       return;
     }
 
@@ -125,12 +125,12 @@ function Home() {
                       placeholder="Enter your name"
                     />
                   </FormGroup>
-                  <FormGroup label="Session Name" isRequired>
+                  <FormGroup label="Session Name">
                     <TextInput
                       id="session-name"
                       value={sessionName}
                       onChange={(_e, value) => setSessionName(value)}
-                      placeholder="Sprint 24 Planning"
+                      placeholder="Happy Fun Planning Time"
                     />
                   </FormGroup>
                   <Button variant="primary" onClick={createSession}>
