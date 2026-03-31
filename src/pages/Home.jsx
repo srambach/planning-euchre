@@ -94,7 +94,7 @@ function Home() {
   };
 
   return (
-    <Page>
+    <Page sidebar={null}>
       <PageSection variant="light">
         <Split hasGutter>
           <SplitItem isFilled>

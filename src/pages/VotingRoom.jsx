@@ -32,6 +32,9 @@ import {
   ModalBody,
   ModalFooter,
   ClipboardCopy,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
 } from '@patternfly/react-core';
 import { ref, onValue, update, set, remove } from 'firebase/database';
 import { database, ensureAuth } from '../services/firebase';
@@ -363,7 +366,7 @@ function VotingRoom() {
   return (
     <>
       <EmojiTossAnimation tosses={emojiTosses} />
-      <Page>
+      <Page sidebar={null}>
         <PageSection variant="light">
         <Split hasGutter>
           <SplitItem isFilled>
@@ -381,51 +384,51 @@ function VotingRoom() {
             </ClipboardCopy>
           </SplitItem>
           <SplitItem>
-            <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-              <FlexItem>
-                <Popover
-                  headerContent="Change your name"
-                  bodyContent={
-                    <Form>
-                      <FormGroup label="New name">
-                        <Flex>
-                          <FlexItem grow={{ default: 'grow' }}>
-                            <TextInput
-                              id="new-user-name"
-                              value={newUserName}
-                              onChange={(_e, value) => setNewUserName(swapName(value))}
-                              placeholder="Enter new name"
-                            />
-                          </FlexItem>
-                          <FlexItem>
-                            <Button
-                              variant="primary"
-                              onClick={changeName}
-                            >
-                              Change
-                            </Button>
-                          </FlexItem>
-                        </Flex>
-                      </FormGroup>
-                    </Form>
-                  }
-                >
-                  <Button variant="link" style={{ padding: 0 }}>
-                    <Label color="blue" style={{ cursor: 'pointer' }}>
+            <Toolbar>
+              <ToolbarContent>
+                <ToolbarItem>
+                  <Popover
+                    headerContent="Change your name"
+                    bodyContent={
+                      <Form>
+                        <FormGroup label="New name">
+                          <Flex>
+                            <FlexItem grow={{ default: 'grow' }}>
+                              <TextInput
+                                id="new-user-name"
+                                value={newUserName}
+                                onChange={(_e, value) => setNewUserName(swapName(value))}
+                                placeholder="Enter new name"
+                              />
+                            </FlexItem>
+                            <FlexItem>
+                              <Button
+                                variant="primary"
+                                onClick={changeName}
+                              >
+                                Change
+                              </Button>
+                            </FlexItem>
+                          </Flex>
+                        </FormGroup>
+                      </Form>
+                    }
+                  >
+                    <Button variant="secondary">
                       Logged in as: {userName}
-                    </Label>
+                    </Button>
+                  </Popover>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button variant="danger" onClick={() => setIsLeaveModalOpen(true)}>
+                    Leave Room
                   </Button>
-                </Popover>
-              </FlexItem>
-              <FlexItem>
-                <Button variant="danger" onClick={() => setIsLeaveModalOpen(true)}>
-                  Leave Room
-                </Button>
-              </FlexItem>
-              <FlexItem>
-                <ThemeSwitcher />
-              </FlexItem>
-            </Flex>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <ThemeSwitcher />
+                </ToolbarItem>
+              </ToolbarContent>
+            </Toolbar>
           </SplitItem>
         </Split>
       </PageSection>
