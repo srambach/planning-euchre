@@ -378,7 +378,7 @@ function VotingRoom() {
             <MastheadMain>
               <MastheadBrand>
                 <MastheadLogo component="div">
-                  <img src={logo} alt="Planning Poker Logo" style={{ height: '48px', width: '48px' }} />
+                  <img src={logo} alt="Planning Euchre Logo" style={{ height: '48px', width: '48px' }} />
                 </MastheadLogo>
               </MastheadBrand>
             </MastheadMain>

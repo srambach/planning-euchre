@@ -99,7 +99,7 @@ function Home() {
         <Split hasGutter>
           <SplitItem isFilled>
             <Title headingLevel="h1" size="3xl">
-              Planning Poker
+              Planning Euchre
             </Title>
             <p>Estimate story points with your agile team</p>
           </SplitItem>
