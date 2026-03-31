@@ -61,13 +61,11 @@ function VotingRoom() {
   const userName = searchParams.get('user');
 
   const [roomData, setRoomData] = useState(null);
-  const [currentIssue, setCurrentIssue] = useState('');
   const [myVote, setMyVote] = useState(null);
   const [error, setError] = useState(null);
-  const [myEmoji, setMyEmoji] = useState('✅');
+  const [myEmoji, setMyEmoji] = useState('😀');
   const [customEmoji, setCustomEmoji] = useState('');
   const [emojiTosses, setEmojiTosses] = useState(null);
-  const [issueUpdateTime, setIssueUpdateTime] = useState(() => Date.now());
   const [newUserName, setNewUserName] = useState('');
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [selectedNewModerator, setSelectedNewModerator] = useState('');
@@ -121,7 +119,6 @@ function VotingRoom() {
         }
 
         setRoomData(data);
-        setCurrentIssue(data.currentIssue || '');
         setEmojiTosses(data.emojiTosses || null);
 
         // Add user to participants if not already there (but not if they're leaving)
@@ -131,7 +128,7 @@ function VotingRoom() {
             name: userName,
             vote: null,
             isModerator: false,
-            emoji: '✅',
+            emoji: '😀',
             badges: [],
             voteHistory: {
               votes: [],
@@ -157,7 +154,15 @@ function VotingRoom() {
       setError('Failed to authenticate');
     });
 
-    // Cleanup expired tosses every second
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [roomCode, userName, navigate]);
+
+  // Separate effect for cleaning up expired tosses
+  useEffect(() => {
     const cleanupInterval = setInterval(() => {
       if (emojiTosses) {
         cleanupExpiredTosses(roomCode, emojiTosses);
@@ -165,12 +170,9 @@ function VotingRoom() {
     }, 1000);
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
       clearInterval(cleanupInterval);
     };
-  }, [roomCode, userName, navigate, emojiTosses]);
+  }, [roomCode, emojiTosses]);
 
   const castVote = async (value) => {
     // Prevent voting if votes are already revealed
@@ -192,7 +194,7 @@ function VotingRoom() {
       { ...participant, voteHistory: newVoteHistory },
       allParticipants,
       voteTime,
-      issueUpdateTime,
+      0, // No issue update time since we removed that feature
       null // roundAverage not available until votes are revealed
     );
 
@@ -225,11 +227,6 @@ function VotingRoom() {
     setMyVote(null);
   };
 
-  const updateIssue = async () => {
-    const issueRef = ref(database, `rooms/${roomCode}/currentIssue`);
-    await set(issueRef, currentIssue);
-    setIssueUpdateTime(Date.now());
-  };
 
   const updateEmoji = async (emoji) => {
     const emojiRef = ref(database, `rooms/${roomCode}/participants/${userName}/emoji`);
@@ -356,7 +353,6 @@ function VotingRoom() {
   }
 
   const participants = roomData.participants || {};
-  const allVoted = Object.values(participants).every((p) => p.vote !== null);
   const votesRevealed = roomData.votesRevealed;
 
   const voteStats = votesRevealed
@@ -466,34 +462,6 @@ function VotingRoom() {
             <Stack hasGutter>
               <StackItem>
                 <Card>
-                  <CardTitle>
-                    <Title headingLevel="h2" size="xl">
-                      Current Issue
-                    </Title>
-                  </CardTitle>
-                  <CardBody>
-
-                    <Form>
-                      <FormGroup>
-                        <TextInput
-                          id="current-issue"
-                          value={currentIssue}
-                          onChange={(_e, value) => setCurrentIssue(value)}
-                          placeholder="Enter issue description"
-                        />
-                      </FormGroup>
-                      {isModerator && (
-                        <Button variant="secondary" onClick={updateIssue}>
-                          Update Issue
-                        </Button>
-                      )}
-                    </Form>
-                  </CardBody>
-                </Card>
-              </StackItem>
-
-              <StackItem>
-                <Card>
                   <CardBody>
                     <Stack hasGutter>
                       <StackItem>
@@ -566,7 +534,7 @@ function VotingRoom() {
                                     )}
                                     <StackItem>
                                       <Title headingLevel="h1" size="3xl">
-                                        {participant.vote !== null ? participant.vote : '—'}
+                                        {participant.vote != null ? participant.vote : '—'}
                                       </Title>
                                     </StackItem>
                                   </Stack>
@@ -590,11 +558,6 @@ function VotingRoom() {
 
           <GridItem span={4}>
             <Stack hasGutter>
-              {emojiTosses && (
-                <StackItem>
-                  <EmojiTossFeed tosses={emojiTosses} />
-                </StackItem>
-              )}
               <StackItem>
                 <Card>
                   <CardBody>
@@ -608,7 +571,13 @@ function VotingRoom() {
                         <List isPlain>
                           {Object.values(participants).map((participant) => (
                             <ListItem key={participant.name}>
-                              <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                              <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
+                                <FlexItem>
+                                  <Title headingLevel="h3" size="xl">
+                                    {participant.vote != null ? '✅' : '❓'}
+                                  </Title>
+                                </FlexItem>
+                                <FlexItem>{participant.name}</FlexItem>
                                 <FlexItem>
                                   {participant.name === userName ? (
                                     <Popover
@@ -666,17 +635,16 @@ function VotingRoom() {
                                     >
                                       <Button variant="plain">
                                         <Title headingLevel="h3" size="xl">
-                                          {participant.vote !== null ? (participant.emoji || myEmoji) : '❌'}
+                                          {participant.emoji || myEmoji}
                                         </Title>
                                       </Button>
                                     </Popover>
                                   ) : (
                                     <Title headingLevel="h3" size="xl">
-                                      {participant.vote !== null ? (participant.emoji || '✅') : '❌'}
+                                      {participant.emoji || '😀'}
                                     </Title>
                                   )}
                                 </FlexItem>
-                                <FlexItem>{participant.name}</FlexItem>
                                 {participant.badges && participant.badges.length > 0 && (
                                   <FlexItem>
                                     <BadgeDisplay badges={participant.badges} />
@@ -721,7 +689,7 @@ function VotingRoom() {
                             variant="primary"
                             isBlock
                             onClick={revealVotes}
-                            isDisabled={!allVoted || votesRevealed}
+                            isDisabled={votesRevealed}
                           >
                             Reveal Votes
                           </Button>
@@ -735,18 +703,14 @@ function VotingRoom() {
                             Clear Votes
                           </Button>
                         </StackItem>
-                        {!allVoted && !votesRevealed && (
-                          <StackItem>
-                            <Alert
-                              variant="warning"
-                              title="Waiting for all participants to vote"
-                              isInline
-                            />
-                          </StackItem>
-                        )}
                       </Stack>
                     </CardBody>
                   </Card>
+                </StackItem>
+              )}
+              {emojiTosses && (
+                <StackItem>
+                  <EmojiTossFeed tosses={emojiTosses} />
                 </StackItem>
               )}
             </Stack>
