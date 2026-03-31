@@ -70,6 +70,7 @@ function VotingRoom() {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [selectedNewModerator, setSelectedNewModerator] = useState('');
   const isLeavingRef = useRef(false);
+  const isRenamingRef = useRef(false);
 
   // Generate shareable room URL
   const shareUrl = useMemo(() => {
@@ -106,9 +107,13 @@ function VotingRoom() {
     }
 
     let unsubscribe;
+    let isMounted = true;
 
     // Ensure authentication before setting up room listener
     ensureAuth().then(() => {
+      // Don't set up listener if component unmounted or userName changed
+      if (!isMounted) return;
+
       const roomRef = ref(database, `rooms/${roomCode}`);
 
       unsubscribe = onValue(roomRef, async (snapshot) => {
@@ -121,8 +126,8 @@ function VotingRoom() {
         setRoomData(data);
         setEmojiTosses(data.emojiTosses || null);
 
-        // Add user to participants if not already there (but not if they're leaving)
-        if (!data.participants?.[userName] && !isLeavingRef.current) {
+        // Add user to participants if not already there (but not if they're leaving or renaming)
+        if (!data.participants?.[userName] && !isLeavingRef.current && !isRenamingRef.current) {
           const updates = {};
           updates[`rooms/${roomCode}/participants/${userName}`] = {
             name: userName,
@@ -155,6 +160,7 @@ function VotingRoom() {
     });
 
     return () => {
+      isMounted = false;
       if (unsubscribe) {
         unsubscribe();
       }
@@ -258,6 +264,9 @@ function VotingRoom() {
     }
 
     try {
+      // Set ref to prevent re-adding during rename process
+      isRenamingRef.current = true;
+
       const currentParticipant = roomData?.participants?.[userName];
       if (!currentParticipant) return;
 
@@ -275,9 +284,15 @@ function VotingRoom() {
       // Update URL with new name
       navigate(`/room/${roomCode}?user=${encodeURIComponent(trimmedName)}`, { replace: true });
       setNewUserName('');
+
+      // Reset ref after navigation
+      setTimeout(() => {
+        isRenamingRef.current = false;
+      }, 1000);
     } catch (error) {
       console.error('Error changing name:', error);
       alert('Failed to change name');
+      isRenamingRef.current = false;
     }
   };
 
